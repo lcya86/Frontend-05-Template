@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      .light {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        opacity: 0.2;
+      }
+      .red {
+        background-color: red;
+      }
+      .yellow {
+        background-color: yellow;
+      }
+      .green {
+        background-color: green;
+      }
+      .active {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="red light"></div>
+      <div class="yellow light"></div>
+      <div class="green light"></div>
+    </div>
+    <script>
+      const red = () => {
+        const redLight = document.querySelector(".red.light");
+        document.querySelectorAll(".light").forEach((el) => {
+          el.classList.remove("active");
+        });
+        redLight.classList.add("active");
+      };
+
+      const green = () => {
+        const greenLight = document.querySelector(".green.light");
+        document.querySelectorAll(".light").forEach((el) => {
+          el.classList.remove("active");
+        });
+        greenLight.classList.add("active");
+      };
+
+      const yellow = () => {
+        const yellowLight = document.querySelector(".yellow.light");
+        document.querySelectorAll(".light").forEach((el) => {
+          el.classList.remove("active");
+        });
+        yellowLight.classList.add("active");
+      };
+
+      const sleep = (t) => {
+        return new Promise((resolve) => {
+          setTimeout(resolve, t);
+        });
+      };
+
+      const start = async () => {
+        green();
+        await sleep(10 * 1000);
+        yellow();
+        await sleep(2 * 1000);
+        red();
+        await sleep(5 * 1000);
+        start();
+      };
+      start();
+    </script>
+  </body>
+</html>
