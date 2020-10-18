@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <style>
+    .cell {
+      display: block;
+      height: 6px;
+      width: 6px;
+      background-color: grey;
+      border-bottom: 1px solid white;
+      border-right: 1px solid white;
+      user-select: none;
+    }
+    #container {
+      display: flex;
+      flex-wrap: wrap;
+      width: 701px;
+    }
+  </style>
+  <body>
+    <div id="container"></div>
+    <button onclick="localStorage.setItem('map',JSON.stringify(map))">
+      save
+    </button>
+    <script>
+      class Sorted {
+        constructor(data, compare) {
+          this.data = data.slice();
+          this.compare = compare || ((a, b) => a - b);
+        }
+
+        take() {
+          if (!this.data.length) {
+            return;
+          }
+          let min = this.data[0];
+          let minIndex = 0;
+
+          for (let i = 0; i < this.data.length; i++) {
+            if (this.compare(this.data[i], min) < 0) {
+              min = this.data[i];
+              minIndex = i;
+            }
+          }
+
+          this.data[minIndex] = this.data[this.data.length - 1];
+          this.data.pop();
+          return min;
+        }
+
+        give(v) {
+          this.data.push(v);
+        }
+
+        get length() {
+          return this.data.length;
+        }
+      }
+
+      const sleep = (time) => {
+        return new Promise((resolve) => {
+          setTimeout(resolve, time);
+        });
+      };
+
+      const map = localStorage["map"]
+        ? JSON.parse(localStorage["map"])
+        : new Array(10000).fill(0);
+
+      // 生成地图
+      const container = document.getElementById("container");
+      const fragment = document.createDocumentFragment();
+
+      let drawing = false;
+      let clear = false;
+      for (let y = 0; y < 100; y++) {
+        for (let x = 0; x < 100; x++) {
+          const cell = document.createElement("div");
+          cell.classList.add("cell");
+
+          if (map[y * 100 + x] === 1) {
+            cell.style.backgroundColor = "black";
+          } else if (map[y * 100 + x] === 2) {
+            cell.style.backgroundColor = "green";
+          }
+
+          if (x === 50 && y === 50) {
+            cell.style.backgroundColor = "red";
+          }
+
+          cell.addEventListener("mousemove", () => {
+            if (drawing) {
+              map[y * 100 + x] = 1;
+              cell.style.backgroundColor = "black";
+            }
+          });
+
+          fragment.appendChild(cell);
+        }
+      }
+      container.appendChild(fragment);
+
+      document.addEventListener("mousedown", (e) => {
+        drawing = true;
+        clear = e.which === 3;
+      });
+      document.addEventListener("mouseup", () => {
+        drawing = false;
+      });
+      // document.addEventListener("contextmenu", (e) => {
+      //   e.preventDefault();
+      // });
+
+      // 寻路
+
+      const distance = (p1, p2) => {
+        return (p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2;
+      };
+
+      const findPath = async (start, end) => {
+        console.time();
+        const queue = new Sorted(
+          [[start[0], start[1]]],
+          (a, b) => distance(a, end) - distance(b, end)
+        );
+        const table = Object.create(map);
+
+        const insert = async (x, y, pre) => {
+          if (table[x + 100 * y] !== 0) {
+            return;
+          }
+          if (x < 0 || y < 0) {
+            return;
+          }
+          if (x >= 100 || y >= 100) {
+            return;
+          }
+          await sleep(0);
+          queue.give([x, y]);
+          table[y * 100 + x] = pre;
+          container.children[y * 100 + x].style.backgroundColor = "green";
+        };
+
+        while (queue.length) {
+          let [x, y] = queue.take();
+          if (end[0] === x && end[1] === y) {
+            let path = [];
+            while (x != start[0] || y != start[1]) {
+              path.push(map[y * 100 + x]);
+              [x, y] = table[y * 100 + x];
+              await sleep(0);
+              container.children[y * 100 + x].style.backgroundColor = "purple";
+            }
+            console.timeEnd();
+            return path;
+          }
+
+          await insert(x, y + 1, [x, y]);
+          await insert(x, y - 1, [x, y]);
+          await insert(x + 1, y, [x, y]);
+          await insert(x - 1, y, [x, y]);
+
+          await insert(x + 1, y + 1, [x, y]);
+          await insert(x + 1, y - 1, [x, y]);
+          await insert(x - 1, y + 1, [x, y]);
+          await insert(x - 1, y - 1, [x, y]);
+        }
+      };
+    </script>
+  </body>
+</html>
